@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Throwable;
 
+use function Laravel\Prompts\password;
 
 class AuthController extends Controller
 {
@@ -81,6 +82,18 @@ class AuthController extends Controller
                 'message' => $th ->getMessage(),
             ],500);
         }
+    }
+    public function status(){
+        $userData = auth()->user();
+        return response()->json([
+            'status'=> true,
+            'message' => 'Waiting for user decision',
+            'data' => $userData,
+            'buttons' => [
+                'accept_url' => '/accept',
+                'reject_url' => '/reject'
+            ]
+        ],200);
     }
     public function profile(){
         $userData = auth()->user();
