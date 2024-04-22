@@ -59,6 +59,7 @@ class AuthController extends Controller
             if ($validateUser->fails()){
                 return response()->json([
                     'status'=>false,
+
                     'message' => 'validation error',
                     'errors' => $validateUser->errors()
                 ],422);
@@ -72,6 +73,7 @@ class AuthController extends Controller
             $user = User::where('email',$request->email)->first();
             return response()->json([
                 'status'=>true,
+                'email' => $user->email,
                 'message' => 'Log in successful',
                 'token' => $user->createToken("API Token")->plainTextToken
             ],200);
@@ -83,17 +85,74 @@ class AuthController extends Controller
             ],500);
         }
     }
-    public function status(){
-        $userData = auth()->user();
-        return response()->json([
-            'status'=> true,
-            'message' => 'Waiting for user decision',
-            'data' => $userData,
-            'buttons' => [
-                'accept_url' => '/accept',
-                'reject_url' => '/reject'
-            ]
-        ],200);
+    public function status(Request $request)
+    {
+        try {
+            $validateUser = Validator::make($request->all(), [
+                'email' => 'required|email',
+            ]);
+    
+            if ($validateUser->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Validation error',
+                    'errors' => $validateUser->errors()
+                ], 422);
+            }
+    
+            $user = User::where('email', $request->email)->first();
+    
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found'
+                ], 404);
+            }
+    
+            if ($user->status === 'waiting') {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Login pending. Please wait for approval.'
+                ], 200);
+            } elseif ($user->status === 'accepted') {
+                // Check if password is provided
+                if (!$request->has('password')) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Password is required'
+                    ], 422);
+                }
+    
+                if (!Auth::attempt($request->only(['email', 'password']))) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Invalid email or password'
+                    ], 401);
+                }
+    
+                return response()->json([
+                    'status' => true,
+                    'email' => $user->email,
+                    'message' => 'Login successful',
+                    'token' => $user->createToken("API Token")->plainTextToken
+                ], 200);
+            } elseif ($user->status === 'rejected') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Login failed. Your account has been rejected.'
+                ], 401);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid user status'
+                ], 500);
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
     }
     public function profile(){
         $userData = auth()->user();
