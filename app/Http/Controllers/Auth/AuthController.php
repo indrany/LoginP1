@@ -97,8 +97,8 @@ class AuthController extends Controller
             'message' => 'Waiting for user decision',
             'data' => $userData,
             'buttons' => [
-                'accept' => true, // Set ke true jika ingin tombol accept ditampilkan
-                'reject' => false // Set ke false jika tidak ingin tombol reject ditampilkan
+                'accept' => true, 
+                'reject' => true
            ]
     ],200);
     }
