@@ -10,7 +10,8 @@ Route::get("login", [AuthController::class,"login"]);
 Route::group([
     "middleware" => ["auth:sanctum"]
 ], function (){
-    route::post("status",[AuthController::class,"status"]);
     Route::get("profile", [AuthController::class,"profile"]);
     Route::get("logout", [AuthController::class,"logout"]);
 });
+
+Route::post("status",[AuthController::class,"status"]);
