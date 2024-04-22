@@ -50,48 +50,12 @@ class AuthController extends Controller
         }
     }
     public function login(Request $request){
-        try{
-            $validateUser = Validator::make($request ->all(),
-            [
-                'email' => 'required|email',
-                'password' => 'required'
-            ]);
-            if ($validateUser->fails()){
-                return response()->json([
-                    'status'=>false,
-
-                    'message' => 'validation error',
-                    'errors' => $validateUser->errors()
-                ],422);
-            }
-            if(!Auth::attempt($request->only(['email','password']))){
-                return response()->json([
-                    'status'=>false,
-                    'message' => 'Email & password does not match with our record'
-                ],401);
-            }
-            $user = User::where('email',$request->email)->first();
-            return response()->json([
-                'status'=>true,
-                'email' => $user->email,
-                'message' => 'Log in successful',
-                'token' => $user->createToken("API Token")->plainTextToken
-            ],200);
-            
-        }catch (\Throwable $th){
-            return response()->json([
-                'status'=>false,
-                'message' => $th ->getMessage(),
-            ],500);
-        }
-    }
-    public function status(Request $request)
-    {
         try {
             $validateUser = Validator::make($request->all(), [
                 'email' => 'required|email',
+                'password' => 'required'
             ]);
-    
+            
             if ($validateUser->fails()) {
                 return response()->json([
                     'status' => false,
@@ -99,60 +63,44 @@ class AuthController extends Controller
                     'errors' => $validateUser->errors()
                 ], 422);
             }
-    
-            $user = User::where('email', $request->email)->first();
-    
-            if (!$user) {
+            
+            if (!Auth::attempt($request->only(['email','password']))) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'User not found'
-                ], 404);
-            }
-    
-            if ($user->status === 'waiting') {
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Login pending. Please wait for approval.'
-                ], 200);
-            } elseif ($user->status === 'accepted') {
-                // Check if password is provided
-                if (!$request->has('password')) {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Password is required'
-                    ], 422);
-                }
-    
-                if (!Auth::attempt($request->only(['email', 'password']))) {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Invalid email or password'
-                    ], 401);
-                }
-    
-                return response()->json([
-                    'status' => true,
-                    'email' => $user->email,
-                    'message' => 'Login successful',
-                    'token' => $user->createToken("API Token")->plainTextToken
-                ], 200);
-            } elseif ($user->status === 'rejected') {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Login failed. Your account has been rejected.'
+                    'message' => 'Email & password do not match with our records'
                 ], 401);
-            } else {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invalid user status'
-                ], 500);
             }
+            
+            $user = User::where('email', $request->email)->first();
+            
+            // Menambahkan email dan password dalam respons
+            return response()->json([
+                'status' => true,
+                'message' => 'Log in successful',
+                'email' => $request->email, // Menambahkan email dalam respons
+                'password' => $request->password, // Menambahkan password dalam respons
+                'token' => $user->createToken("API Token")->plainTextToken
+            ], 200);
+            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage(),
             ], 500);
         }
+    }
+    
+    public function status(){
+        $userData = auth()->user();
+        return response()->json([
+            'status'=> true,
+            'message' => 'Waiting for user decision',
+            'data' => $userData,
+            'buttons' => [
+                'accept' => true, // Set ke true jika ingin tombol accept ditampilkan
+                'reject' => false // Set ke false jika tidak ingin tombol reject ditampilkan
+           ]
+    ],200);
     }
     public function profile(){
         $userData = auth()->user();
@@ -171,5 +119,12 @@ class AuthController extends Controller
             'message' => 'User Logged Out',
             'data' => [],
         ],200);
+    }
+    public function accept(){
+    return redirect('/dashboard');
+    }
+
+    public function reject(){
+    return redirect('/login');
     }
 }
