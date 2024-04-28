@@ -110,7 +110,7 @@ class AuthController extends Controller
     public function getUserData()
     {
         try {
-            $user = User::where('status', User::STATUS_REJECTED)->get();
+            $user = User::where('status', User::STATUS_PENDING)->get();
             return response()->json([
                 'status' => true,
                 'user' => $user, // Mengirim data pengguna sebagai respons
@@ -189,6 +189,44 @@ class AuthController extends Controller
         ], 200);
     }
 
+    // Tambahkan method baru untuk memeriksa status akun pengguna
+    public function checkAccountStatus(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            if ($user->status === User::STATUS_PENDING) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Akun Anda sedang menunggu persetujuan',
+                    'data' => [
+                        'status' => 'pending'
+                    ]
+                ], 403);
+            } elseif ($user->status === User::STATUS_REJECTED) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Akun Anda telah ditolak',
+                    'data' => [
+                        'status' => 'rejected'
+                    ]
+                ], 403);
+            } elseif ($user->status === User::STATUS_ACCEPTED) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Akun Anda telah disetujui',
+                    'data' => [
+                        'status' => 'accepted'
+                    ]
+                ], 200);
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
 
     public function profile()
     {
