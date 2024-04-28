@@ -12,8 +12,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Throwable;
 
-use function Laravel\Prompts\password;
-
 class AuthController extends Controller
 {
     public function register(Request $request)
@@ -30,14 +28,14 @@ class AuthController extends Controller
             if ($validateUser->fails()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'validation error',
+                    'message' => 'Validation error',
                     'errors' => $validateUser->errors()
                 ], 422);
             }
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => $request->password,
+                'password' => Hash::make($request->password), // Hash password sebelum menyimpan
             ]);
             return response()->json([
                 'status' => true,
@@ -51,6 +49,7 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
     public function login(Request $request)
     {
         try {
@@ -64,23 +63,57 @@ class AuthController extends Controller
             if ($validateUser->fails()) {
                 return response()->json([
                     'status' => false,
-
-                    'message' => 'validation error',
+                    'message' => 'Error validasi',
                     'errors' => $validateUser->errors()
                 ], 422);
             }
-            if (!Auth::attempt($request->only(['email', 'password']))) {
+
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Email & password does not match with our record'
+                    'message' => 'Email & kata sandi tidak cocok dengan catatan kami'
                 ], 401);
             }
-            $user = User::where('email', $request->email)->first();
+
+            if ($user->status === User::STATUS_PENDING) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Akun Anda sedang menunggu persetujuan',
+                    'data' => [
+                        'status' => 'pending'
+                    ]
+                ], 403);
+            }
+
+            if ($user->status === User::STATUS_REJECTED) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Akun Anda telah ditolak',
+                    'data' => [
+                        'status' => 'rejected'
+                    ]
+                ], 403);
+            }
+
+            // Jika status akun bukan pending atau ditolak, lanjutkan dengan login
+            return $this->loginSuccessResponse($user);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getUserData()
+    {
+        try {
+            $user = User::where('status', User::STATUS_REJECTED)->get();
             return response()->json([
                 'status' => true,
-                'email' => $user->email,
-                'message' => 'Log in successful',
-                'token' => $user->createToken("API Token")->plainTextToken
+                'user' => $user, // Mengirim data pengguna sebagai respons
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
@@ -89,6 +122,73 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+
+    public function acceptAccount(Request $request, $id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $this->markAccountAsAccepted($user);
+            return response()->json([
+                'status' => true,
+                'message' => 'Account accepted successfully',
+                'data' => [
+                    'status' => 'accepted'
+                ]
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function rejectAccount(Request $request, $id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $this->markAccountAsRejected($user);
+            return response()->json([
+                'status' => false,
+                'message' => 'Account rejected successfully',
+                'data' => [
+                    'status' => 'rejected'
+                ]
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    private function markAccountAsAccepted($user)
+    {
+        $user->status = User::STATUS_ACCEPTED;
+        $user->save();
+    }
+
+    private function markAccountAsRejected($user)
+    {
+        $user->status = User::STATUS_REJECTED;
+        $user->save();
+    }
+
+    public function loginSuccessResponse($user)
+    {
+        return response()->json([
+            'status' => true,
+            'email' => $user->email,
+            'message' => 'Log in successful',
+            'token' => $user->createToken("API Token")->plainTextToken,
+            'data' => [
+                'status' => 'accepted'
+            ]
+        ], 200);
+    }
+
 
     public function profile()
     {
@@ -100,14 +200,13 @@ class AuthController extends Controller
             'id' => auth()->user()->id
         ], 200);
     }
+
     public function logout(Request $request)
     {
-        $user = $request->user();
-        $user->tokens()->delete();
+        $request->user()->tokens()->delete();
+        // return redirect()->route('login'); // Mengarahkan kembali ke halaman login
         return response()->json([
-            'status' => true,
-            'message' => 'User Logged Out',
-            'data' => [],
-        ], 200);
+            'message' => 'Log out success'
+        ]);
     }
 }
