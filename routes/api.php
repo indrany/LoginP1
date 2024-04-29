@@ -4,12 +4,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 
+
 // Rute untuk register, login, dan status
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
-// Rute kirim user flutter
 Route::get('/user', [AuthController::class, 'getUserData']);
-
+Route::get('/status', [AuthController::class, 'checkAccountStatus']);
 
 // Rute untuk profile dan logout, yang memerlukan autentikasi
 Route::group(['middleware' => ['auth:sanctum']], function () {
