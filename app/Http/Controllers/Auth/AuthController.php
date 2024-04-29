@@ -4,13 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Throwable;
 
 class AuthController extends Controller
 {
@@ -35,7 +32,7 @@ class AuthController extends Controller
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => Hash::make($request->password), // Hash password sebelum menyimpan
+                'password' => Hash::make($request->password),
             ]);
             return response()->json([
                 'status' => true,
@@ -97,7 +94,6 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            // Jika status akun bukan pending atau ditolak, lanjutkan dengan login
             return $this->loginSuccessResponse($user);
         } catch (\Throwable $th) {
             return response()->json([
@@ -113,7 +109,7 @@ class AuthController extends Controller
             $user = User::where('status', User::STATUS_PENDING)->get();
             return response()->json([
                 'status' => true,
-                'user' => $user, // Mengirim data pengguna sebagai respons
+                'user' => $user,
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
@@ -122,7 +118,6 @@ class AuthController extends Controller
             ], 500);
         }
     }
-
 
     public function acceptAccount(Request $request, $id)
     {
@@ -189,20 +184,26 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // Tambahkan method baru untuk memeriksa status akun pengguna
     public function checkAccountStatus(Request $request)
     {
         try {
             $user = Auth::user();
 
-            if ($user->status === User::STATUS_PENDING) {
+            if (!$user) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Akun Anda sedang menunggu persetujuan',
+                    'message' => 'Pengguna tidak terotentikasi.',
+                ], 401);
+            }
+
+            if ($user->status === User::STATUS_PENDING) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Status akun: Menunggu persetujuan',
                     'data' => [
                         'status' => 'pending'
                     ]
-                ], 403);
+                ], 200);
             } elseif ($user->status === User::STATUS_REJECTED) {
                 return response()->json([
                     'status' => false,
@@ -219,6 +220,11 @@ class AuthController extends Controller
                         'status' => 'accepted'
                     ]
                 ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Status akun tidak valid.',
+                ], 400);
             }
         } catch (\Throwable $th) {
             return response()->json([
@@ -227,6 +233,7 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
 
     public function profile()
     {
@@ -242,7 +249,6 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
-        // return redirect()->route('login'); // Mengarahkan kembali ke halaman login
         return response()->json([
             'message' => 'Log out success'
         ]);
