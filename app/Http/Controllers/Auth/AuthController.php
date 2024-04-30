@@ -79,9 +79,10 @@ class AuthController extends Controller
                     'status' => false,
                     'message' => 'Akun Anda sedang menunggu persetujuan',
                     'data' => [
-                        'status' => 'pending'
+                        'status' => 'pending',
+                        'token' => $user->createToken("API Token")->plainTextToken
                     ]
-                ], 403);
+                ], 200);
             }
 
             if ($user->status === User::STATUS_REJECTED) {
@@ -187,7 +188,7 @@ class AuthController extends Controller
     public function checkAccountStatus(Request $request)
     {
         try {
-            $user = Auth::user();
+            $user = $request->user();
 
             if (!$user) {
                 return response()->json([
