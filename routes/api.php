@@ -9,7 +9,7 @@ use App\Http\Controllers\Auth\AuthController;
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::get('/user', [AuthController::class, 'getUserData']);
-Route::get('/status', [AuthController::class, 'checkAccountStatus']);
+Route::get('/status', [AuthController::class, 'checkAccountStatus'])->middleware(['auth:sanctum']);
 
 // Rute untuk profile dan logout, yang memerlukan autentikasi
 Route::group(['middleware' => ['auth:sanctum']], function () {
