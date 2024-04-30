@@ -17,7 +17,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-Route::middleware('auth:sanctum')->post('/status', [AuthController::class, 'status']);
+Route::middleware('auth:sanctum')->get('/status', [AuthController::class, 'checkAccountStatus']);
 
 
 

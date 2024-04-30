@@ -29,8 +29,7 @@
                     <div>
                         <h2>Hello, Again</h2>
                         <p>We are happy to have you back.</p>
-                        <form id="loginForm" method="POST" action="{{ route('login') }}">
-                            @csrf
+                        <form id="loginForm" method="GET">
                             <div class="mb-3">
                                 <label for="user" class="form-label">{{ __('Email') }}</label>
                                 <input id="user" class="form-control" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username">
@@ -47,7 +46,7 @@
                                 @endif
                             </div>
                             <div class="mb-3">
-                                <button type="submit" class="btn btn-lg btn-success w-100 fs-6">{{ __('Login') }}</button>
+                                <button type="submit" class="btn btn-lg btn-success w-100 fs-6">login</button>
                             </div>
                         </form>
                         <div class="mb-3">
@@ -60,7 +59,11 @@
     </div>
 
     <!-- Tambahkan elemen untuk loading indicator -->
-    <div id="loading" style="display: none;">Loading...</div>
+    <div id="loading" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
 
     <!-- Tambahkan script JavaScript -->
    <script>
@@ -70,69 +73,91 @@
         var formData = new FormData(form);
 
         // Tampilkan loading indicator saat pengguna mengirim formulir
-        document.getElementById('loading').style.display = 'block';
+       document.getElementById('loading').style.display = 'block';
 
-        fetch('/status', { 
-            method: 'GET',
+        fetch('api/login', { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+            },
+            body: JSON.stringify({
+                email: formData.get('email'),
+                password: formData.get('password'),
+            })
+
         })
         .then(response => {
+            console.log(response);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             return response.json();
         })
         .then(data => {
-            if (data.status) {
+            // if (data.status.status ==) {
                 if (data.data.status === 'accepted') {
                     window.location.href = '/dashboard';
                 } else if (data.data.status === 'pending') {
+                    // Tampilkan loading indicator 
+                    document.getElementById('loading').style.display = 'block';
                     // Tampilkan pesan atau animasi loading
-                    document.getElementById('loading').innerHTML = 'Waiting for account approval...';
-                    pollAccountStatus(); // Memanggil fungsi pollAccountStatus untuk memeriksa status setiap 3 detik
+                    // document.getElementById('loading').innerHTML = 'Waiting for account approval...';
+                    pollAccountStatus(data.data.token); // Memanggil fungsi pollAccountStatus untuk memeriksa status setiap 3 detik
                 } else {
                     alert('Your account is not rejected.');
                     document.getElementById('loading').style.display = 'none'; // Sembunyikan loading indicator jika tidak rejected
                 }
-            } else {
-                alert(data.message || 'An error occurred. Please try again later.');
-                document.getElementById('loading').style.display = 'none'; // Sembunyikan loading indicator jika tidak ada status
-            }
+            // } else {
+            //     alert(data.message || 'An error occurred. Please try again later.');
+            //     document.getElementById('loading').style.display = 'none'; // Sembunyikan loading indicator jika tidak ada status
+            // }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again later.');
+            alert('An error occurred. Please try again later. Error dari dari cekstatus');
 
             // Sembunyikan loading indicator jika terjadi kesalahan
             document.getElementById('loading').style.display = 'none';
         });
     });
 
-    function pollAccountStatus() {
+    function pollAccountStatus(token) {
         const checkStatus = () => {
-            fetch('/status', {
+            console.log('Checking account status...');
+            console.log(token);
+            fetch('/api/status', {
                 method: 'GET',
+                headers:{
+                    'Content-Type': 'application/json',
+                    'accept': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                }
             })
             .then(response => {
+                console.log(response);
+                console.log('ini respon dari /api/status');
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
                 return response.json();
             })
             .then(data => {
-                if (data.status) {
+                console.log(data);
+                // if (data.status) {
                     if (data.data.status === 'accepted') {
                         window.location.href = '/dashboard';
                     } else if (data.data.status === 'pending') {
                         // Tampilkan pesan atau animasi loading
-                        console.log(data.message);
+                    console.log(data.message);
                         // Recursively call checkStatus after 3 seconds
                         setTimeout(checkStatus, 3000);
                     } else {
                         alert('Your account is not rejected.');
                     }
-                } else {
-                    alert(data.message || 'An error occurred. Please try again later.');
-                }
+                // } else {
+                //     alert(data.message || 'user not found.');
+                // }
             })
             .catch(error => {
                 console.error('Error:', error);
