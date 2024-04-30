@@ -46,7 +46,7 @@ class AuthController extends Controller
             ], 500);
         }
     }
-<<<<<<< HEAD
+
 
     public function login(Request $request)
     {
@@ -103,8 +103,7 @@ class AuthController extends Controller
                 'message' => $th->getMessage(),
             ], 500);
         }
-=======
-    
+    }    
     public function status(){
         $userData = auth()->user();
         return response()->json([
@@ -117,27 +116,10 @@ class AuthController extends Controller
            ]
     ],200);
     }
-    public function profile(){
-        $userData = auth()->user();
-        return response()->json([
-            'status'=> true,
-            'message' => 'User Verification Complete',
-            'data' => $userData,
-            'id'=>auth()->user()->id
-        ],200);
-    }
-    public function logout(Request $request){
-        $user = $request->user();
-        $user->tokens()->delete();
-        return response()->json([
-            'status'=> true,
-            'message' => 'User Logged Out',
-            'data' => [],
-        ],200);
-    }
+    
     public function accept(){
     return redirect('/dashboard');
->>>>>>> c3c3739f4c190dc7a2315b97474d09e65efd52fc
+
     }
 
     public function getUserData()
