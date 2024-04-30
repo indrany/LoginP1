@@ -2,32 +2,23 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\AuthController;
 
 Route::get('/', function () {
     return view('welcome');
 });
-Route::get('/verify-action', function () {
-    return view('verify-action');
-})->middleware(['auth'])->name('verify-action');
-
-Route::post('/verify-action', function (Illuminate\Http\Request $request) {
-    $user = $request->user();
-    if ($request->has('accept')) {
-        return redirect()->route('dashboard');
-    } elseif ($request->has('reject')) {
-        auth()->logout();
-        return redirect()->route('login');
-    }
-})->middleware(['auth'])->name('verify-action');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+Route::middleware('auth:sanctum')->get('/status', [AuthController::class, 'checkAccountStatus']);
 
-require __DIR__.'/auth.php';
+
+
+require __DIR__ . '/auth.php';

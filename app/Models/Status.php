@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Request extends Model
 {
-    protected $fillable = ['accepted', 'rejected', 'loading'];
+    protected $fillable = ['accepted', 'rejected', 'pending'];
 
     /**
      * Scope a query to only include pending requests.
@@ -28,7 +28,7 @@ class Request extends Model
     {
         $this->update([
             'accepted' => true,
-            'loading' => false, // Assuming loading is set to false when approved
+            'pending' => false, // Assuming pending is set to false when approved
         ]);
     }
 
@@ -41,7 +41,7 @@ class Request extends Model
     {
         $this->update([
             'rejected' => true,
-            'loading' => false, // Assuming loading is set to false when rejected
+            'pending' => false, // Assuming pending is set to false when rejected
         ]);
     }
 }

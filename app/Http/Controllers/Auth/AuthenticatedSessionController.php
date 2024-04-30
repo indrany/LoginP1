@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('verify-action', absolute: false));
+        return redirect()->intended(route('login', absolute: false));
     }
 
     /**
