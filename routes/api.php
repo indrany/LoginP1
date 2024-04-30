@@ -6,7 +6,6 @@ use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Auth;
 
 
-<<<<<<< HEAD
 // Rute untuk register, login, dan status
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -22,15 +21,3 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 // Rute tambahan untuk menerima atau menolak akun
 Route::get('accept-account/{id}', [AuthController::class, 'acceptAccount'])->withoutMiddleware(['auth:sanctum']);
 Route::get('reject-account/{id}', [AuthController::class, 'rejectAccount'])->withoutMiddleware(['auth:sanctum']);
-=======
-Route::group([
-    "middleware" => ["auth:sanctum"]
-], function (){
-    Route::get('/accept', [AuthController::class, 'accept']);
-    Route::get('/reject', [AuthController::class, 'reject']);
-    Route::get("profile", [AuthController::class,"profile"]);
-    Route::get("logout",  [AuthController::class,"logout"]);
-});
-
-Route::post("status", [AuthController::class,"status"]);
->>>>>>> c3c3739f4c190dc7a2315b97474d09e65efd52fc
